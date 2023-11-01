@@ -4,7 +4,7 @@ from pika.exchange_type import ExchangeType
 def on_message_received(ch, method, properties, body):
     print(f'External - received new message: {body}')
 
-credentials = pika.PlainCredentials('user', 'LYjEWrVsTN3Wxr0P')
+credentials = pika.PlainCredentials('guest', 'guest')
 connection_parameters = pika.ConnectionParameters('localhost', port=5673, credentials=credentials)
 
 connection = pika.BlockingConnection(connection_parameters)
