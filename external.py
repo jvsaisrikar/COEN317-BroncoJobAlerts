@@ -1,3 +1,7 @@
+# ************************
+#currently not using;
+# ************************
+
 import pika
 from pika.exchange_type import ExchangeType
 
