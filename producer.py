@@ -1,38 +1,50 @@
+from flask import Flask, request, jsonify
 import pika
-from pika.exchange_type import ExchangeType
 
-credentials = pika.PlainCredentials('guest', 'guest')
-connection_parameters = pika.ConnectionParameters('localhost', port=5673, credentials=credentials)
+app = Flask(__name__)
 
-connection = pika.BlockingConnection(connection_parameters)
-<<<<<<< HEAD
-channel = connection.channel()
-# make exchange durable
-channel.exchange_declare(exchange='routing', exchange_type=ExchangeType.direct, durable=True)
-message = 'This message needs to be routed'
+# RabbitMQ server connection parameters
+RABBITMQ_HOST = 'localhost'
+EXCHANGE_NAME = 'topic_logs'
 
-# sample hardcoded messages
-# mark messages as persistent - by setting delivery_mode property = 2
-channel.basic_publish(exchange='routing', routing_key='internal', body="message from internal topic **", properties=pika.BasicProperties(delivery_mode=2))
-channel.basic_publish(exchange='routing', routing_key='external', body="message from extenal topic 1 **", properties=pika.BasicProperties(delivery_mode=2))
-channel.basic_publish(exchange='routing', routing_key='external', body="message from extenal topic 2 **", properties=pika.BasicProperties(delivery_mode=2))
-channel.basic_publish(exchange='routing', routing_key='external', body="message from extenal topic 3 **", properties=pika.BasicProperties(delivery_mode=2))
-channel.basic_publish(exchange='routing', routing_key='external', body="message from extenal topic 4 **", properties=pika.BasicProperties(delivery_mode=2))
-channel.basic_publish(exchange='routing', routing_key='all', body="Both internal and external should get this message **", properties=pika.BasicProperties(delivery_mode=2))
+def read_events_from_file(filename):
+    with open(filename, 'r') as file:
+        return [line.strip() for line in file.readlines()]
 
-print(f'sent message: {message}')
-=======
+@app.route('/publish', methods=['POST'])
+def publish():
+    # Get message and topic from POST data
+    data = request.json
+    message = data.get("message", "")
+    topic = data.get("topic", "")
 
-channel = connection.channel()
+    # Create a connection to the RabbitMQ server
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    channel = connection.channel()
 
-channel.exchange_declare(exchange='routing', exchange_type=ExchangeType.direct)
+    # Declare an exchange
+    channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type='topic')
 
-message = 'This message needs to be routed'
+    if topic == "internal":
+        internal_events = read_events_from_file('internal_events.txt')
+        for event in internal_events:
+            channel.basic_publish(
+                exchange=EXCHANGE_NAME,
+                routing_key=topic,
+                body=event,
+                properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
+            )
+    else:
+        channel.basic_publish(
+            exchange=EXCHANGE_NAME,
+            routing_key=topic,
+            body=message,
+            properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
+        )
 
-channel.basic_publish(exchange='routing', routing_key='external', body="message from extenal topic")
-channel.basic_publish(exchange='routing', routing_key='both', body="Both internal and external should get this message")
+    connection.close()
 
-print(f'sent message: {message}')
+    return jsonify(status="success", message="Message(s) published successfully!")
 
->>>>>>> fce6047 (Initial Commit BoilterPlate)
-connection.close()
+if __name__ == "__main__":
+    app.run(debug=True)
