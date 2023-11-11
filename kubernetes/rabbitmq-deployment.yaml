@@ -12,6 +12,7 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      hostname: rabbitmq-host #used for rabbitMQ internal purposes different from pod name
       containers:
       - name: rabbitmq
         image: rabbitmq:3.8-management
