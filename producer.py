@@ -4,8 +4,15 @@ import pika
 app = Flask(__name__)
 
 # RabbitMQ server connection parameters
-RABBITMQ_HOST = 'localhost'
-EXCHANGE_NAME = 'topic_logs'
+# RABBITMQ_HOST = 'localhost'
+credentials = pika.PlainCredentials('guest', 'guest')
+connection_parameters = pika.ConnectionParameters(
+    host='localhost',
+    port=5673,
+    credentials=credentials,
+    heartbeat=10
+)
+EXCHANGE_NAME = 'routing'
 
 def read_events_from_file(filename):
     with open(filename, 'r') as file:
@@ -19,7 +26,8 @@ def publish():
     topic = data.get("topic", "")
 
     # Create a connection to the RabbitMQ server
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    connection = pika.BlockingConnection(connection_parameters)
     channel = connection.channel()
 
     # Declare an exchange
