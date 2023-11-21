@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import requests
 import pika
 
 app = Flask(__name__)
@@ -17,6 +18,15 @@ EXCHANGE_NAME = 'routing'
 def read_events_from_file(filename):
     with open(filename, 'r') as file:
         return [line.strip() for line in file.readlines()]
+    
+def fetch_external_data():
+    url = "https://boards-api.greenhouse.io/v1/boards/discord/jobs/"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()  # Assuming the API returns a JSON response
+    else:
+        return {"error": "Failed to fetch data"}
+
 
 @app.route('/publish', methods=['POST'])
 def publish():
@@ -42,6 +52,14 @@ def publish():
                 body=event,
                 properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
             )
+    elif topic == "external":
+        external_data = fetch_external_data()
+        channel.basic_publish(
+            exchange=EXCHANGE_NAME,
+            routing_key=topic,
+            body=str(external_data),
+            properties=pika.BasicProperties(delivery_mode=2)
+        )
     else:
         channel.basic_publish(
             exchange=EXCHANGE_NAME,
