@@ -4,8 +4,6 @@ import pika
 
 app = Flask(__name__)
 
-# RabbitMQ server connection parameters
-# RABBITMQ_HOST = 'localhost'
 credentials = pika.PlainCredentials('guest', 'guest')
 connection_parameters = pika.ConnectionParameters(
     host='localhost',
@@ -14,6 +12,8 @@ connection_parameters = pika.ConnectionParameters(
     heartbeat=10
 )
 EXCHANGE_NAME = 'routing'
+BROADCAST_TOPIC = 'broadcast'
+
 
 def read_events_from_file(filename):
     with open(filename, 'r') as file:
@@ -71,6 +71,27 @@ def publish():
     connection.close()
 
     return jsonify(status="success", message="Message(s) published successfully!")
+
+
+@app.route('/broadcast', methods=['POST'])
+def broadcast():
+    data = request.json
+    urgent_message = data.get("message", "")
+
+    connection = pika.BlockingConnection(connection_parameters)
+    channel = connection.channel()
+
+    channel.basic_publish(
+        exchange=EXCHANGE_NAME,
+        routing_key=BROADCAST_TOPIC,
+        body=urgent_message,
+        properties=pika.BasicProperties(delivery_mode=2)
+    )
+
+    connection.close()
+
+    return jsonify(status="success", message="Broadcast message sent successfully!")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
