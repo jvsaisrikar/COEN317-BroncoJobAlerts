@@ -59,8 +59,42 @@ http://localhost:15673/#
 credentials = pika.PlainCredentials('guest', 'guest')
 connection_parameters = pika.ConnectionParameters('localhost', port=5673, credentials=credentials)
 
-# 9. Run Internal, External and then Producer see if everything is fine
--> python3 internal.py
+# 9. Run producer and consumer to see everything fine
 -> python3 external.py
 -> python3 producer.py
+```
+## API Documentation
+```
+# 1. Producer External: (will be fetched from greenhouse jobs API)
+POST: http://127.0.0.1:5000/publish
+{
+    "topic": "external"
+}
+
+# 2. Producer Internal: (will be from internal_events.txt file)
+POST: http://127.0.0.1:5000/publish
+{
+    "topic": "internal"
+}
+
+# 3. Broadcast: (message will be sent to all users(queues))
+POST: http://127.0.0.1:5000/broadcast
+{
+    "message": "Hello Urgent Message"
+}
+
+# 4. Consumer Subscribe: (queue names = user names)
+POST: http://127.0.0.1:5001/subscribe
+{
+    "username": "userBronco",
+    "topic": "internal or external"
+}
+
+# 5. Consumer Unsubscribe
+POST:  http://127.0.0.1:5001/unsubscribe
+{
+    "username": "userBronco",
+    "topic": "internal or external"
+}
+
 ```

@@ -43,10 +43,7 @@ def message_consumer(queue_name):
         try:
             connection = pika.BlockingConnection(connection_parameters)
             channel = connection.channel()
-
-            channel.queue_declare(queue=queue_name, durable=True)
             channel.basic_qos(prefetch_count=1)
-
             def callback(ch, method, properties, body):
                 message = body.decode()
                 logging.info(f'Received message in {queue_name}: {message}')
@@ -106,6 +103,10 @@ def unsubscribe():
 
     if not username or not topic:
         return jsonify({'error': 'Missing username or topic'}), 400
+
+    # Check if the topic is 'broadcast'
+    if topic == 'broadcast':
+        return jsonify({'error': 'Unsubscribing from the broadcast topic is not allowed'}), 400
 
     try:
         connection = pika.BlockingConnection(connection_parameters)
