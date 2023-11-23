@@ -41,7 +41,7 @@ def publish():
     channel = connection.channel()
 
     # Declare an exchange
-    channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type='topic')
+    channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type='topic', durable=True)
 
     if topic == "internal":
         internal_events = read_events_from_file('internal_events.txt')
