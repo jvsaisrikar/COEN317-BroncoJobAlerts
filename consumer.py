@@ -9,7 +9,8 @@ from threading import Lock
 
 # Lock declaration
 subscribe_lock = Lock()
-
+# broadcast topic
+BROADCAST_TOPIC = 'broadcast'
 def fetch_queues():
     url = "http://localhost:15673/api/queues"
     response = requests.get(url, auth=HTTPBasicAuth('guest', 'guest'))
@@ -77,7 +78,7 @@ def subscribe():
 
         queue_name = username
         channel.queue_declare(queue=queue_name, durable=True, exclusive=False)
-
+        channel.queue_bind(exchange='routing', queue=queue_name, routing_key=BROADCAST_TOPIC)
         # locking here when binding; unlocking will be done after this execution.
         with subscribe_lock:
             channel.queue_bind(exchange='routing', queue=queue_name, routing_key=topic)
@@ -133,4 +134,4 @@ def start_consumers_on_startup():
 
 if __name__ == '__main__':
     start_consumers_on_startup()
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
