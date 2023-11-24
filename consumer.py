@@ -1,11 +1,14 @@
 from flask import Flask, request, jsonify
-import pika
 from threading import Thread
+from requests.auth import HTTPBasicAuth
+from threading import Lock
+from datetime import datetime
+import pika
+import sys
 import logging
 import time
 import requests
-from requests.auth import HTTPBasicAuth
-from threading import Lock
+import pytz
 
 # Lock declaration
 subscribe_lock = Lock()
@@ -20,6 +23,16 @@ def fetch_queues():
     else:
         logging.error(f"Failed to fetch queues: {response.text}")
         return []
+
+def get_current_time_in_pst():
+    pst_timezone = pytz.timezone('America/Los_Angeles')
+    return datetime.now(pst_timezone).strftime('%Y-%m-%d %H:%M:%S')
+
+# Checking for '--verbose' argument
+if '--verbose' in sys.argv:
+    logging.basicConfig(level=logging.INFO)
+else:
+    logging.basicConfig(level=logging.ERROR)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -46,7 +59,8 @@ def message_consumer(queue_name):
             channel.basic_qos(prefetch_count=1)
             def callback(ch, method, properties, body):
                 message = body.decode()
-                logging.info(f'Received message in {queue_name}: {message}')
+                current_time = get_current_time_in_pst()
+                print(f'{current_time} - INFO - Received message in {queue_name}: {message}')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume(queue=queue_name, on_message_callback=callback)
