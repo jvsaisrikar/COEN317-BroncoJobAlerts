@@ -74,12 +74,12 @@ def message_consumer(queue_name):
                     jobs = json_message.get("jobs", [])
                     # filtering response
                     filtered_jobs = [{
+                        "title": job.get("title", ""),
+                        "location": job.get("location", {}).get("name", ""),
                         "absolute_url": job.get("absolute_url", ""),
                         "education": job.get("education", ""),
-                        "location": job.get("location", {}).get("name", ""),
                         "id": job.get("id", ""),
-                        "updated_at": job.get("updated_at", ""),
-                        "title": job.get("title", "")
+                        "updated_at": job.get("updated_at", "")
                     } for job in jobs]
 
                     beautified_json = json.dumps(filtered_jobs, indent=4)
