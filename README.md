@@ -60,7 +60,8 @@ credentials = pika.PlainCredentials('guest', 'guest')
 connection_parameters = pika.ConnectionParameters('localhost', port=5673, credentials=credentials)
 
 # 9. Run producer and consumer to see everything fine
--> python3 external.py
+-> python3 consumer.py 
+-> for more consumer information logging: python3 consumer.py --verbose
 -> python3 producer.py
 ```
 ## API Documentation

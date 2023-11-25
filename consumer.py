@@ -24,18 +24,23 @@ def fetch_queues():
         logging.error(f"Failed to fetch queues: {response.text}")
         return []
 
+class PSTFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        pst_timezone = pytz.timezone('America/Los_Angeles')
+        converted_time = datetime.fromtimestamp(record.created, pst_timezone)
+        return converted_time.strftime('%Y-%m-%d %H:%M:%S')
+
 def get_current_time_in_pst():
     pst_timezone = pytz.timezone('America/Los_Angeles')
     return datetime.now(pst_timezone).strftime('%Y-%m-%d %H:%M:%S')
 
-# Checking for '--verbose' argument
-if '--verbose' in sys.argv:
-    logging.basicConfig(level=logging.INFO)
-else:
-    logging.basicConfig(level=logging.ERROR)
+# Checking for '--verbose' argument; info logs will be displayed only if verbose is passed
+log_level = logging.INFO if '--verbose' in sys.argv else logging.ERROR
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+for handler in logging.root.handlers:
+    handler.setFormatter(PSTFormatter())
 
 app = Flask(__name__)
 
@@ -65,7 +70,7 @@ def message_consumer(queue_name):
 
             channel.basic_consume(queue=queue_name, on_message_callback=callback)
             current_time = get_current_time_in_pst()
-            print(f'{current_time} - Consuming messages for: {queue_name}')
+            print(f'{current_time} - Consuming messages for user: {queue_name}')
             channel.start_consuming()
         except pika.exceptions.AMQPConnectionError as e:
             logging.error(f'Connection was closed, retrying in 5 seconds: {e}')
