@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify
+from pika.exchange_type import ExchangeType
 import requests
 import pika
-from pika.exchange_type import ExchangeType
+import json
 
 app = Flask(__name__)
 
@@ -55,12 +56,15 @@ def publish():
             )
     elif topic == "external":
         external_data = fetch_external_data()
-        channel.basic_publish(
-            exchange=EXCHANGE_NAME,
-            routing_key=topic,
-            body=str(external_data),
-            properties=pika.BasicProperties(delivery_mode=2)
-        )
+        if isinstance(external_data, dict) and "error" not in external_data:
+            # Convert the dictionary to a JSON-formatted string
+            json_data = json.dumps(external_data).encode('utf-8')
+            channel.basic_publish(
+                exchange=EXCHANGE_NAME,
+                routing_key=topic,
+                body=json_data,  # Now this is a bytes object
+                properties=pika.BasicProperties(delivery_mode=2)
+            )
     else:
         channel.basic_publish(
             exchange=EXCHANGE_NAME,
