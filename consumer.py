@@ -60,7 +60,7 @@ connection_parameters = pika.ConnectionParameters(
 consumer_threads = {}
 
 def message_consumer(queue_name):
-    while True:  # Reconnection loop
+    while True:
         try:
             connection = pika.BlockingConnection(connection_parameters)
             channel = connection.channel()
@@ -69,15 +69,25 @@ def message_consumer(queue_name):
             def callback(ch, method, properties, body):
                 message = body.decode('utf-8')
                 try:
-                    # Try to parse the message as JSON
+                    # Try to parse the message as JSON from greenhouse.io
                     json_message = json.loads(message)
-                    beautified_json = json.dumps(json_message, indent=4)  # Beautify the JSON output
+                    jobs = json_message.get("jobs", [])
+                    # filtering response
+                    filtered_jobs = [{
+                        "absolute_url": job.get("absolute_url", ""),
+                        "education": job.get("education", ""),
+                        "location": job.get("location", {}).get("name", ""),
+                        "id": job.get("id", ""),
+                        "updated_at": job.get("updated_at", ""),
+                        "title": job.get("title", "")
+                    } for job in jobs]
+
+                    beautified_json = json.dumps(filtered_jobs, indent=4)
                     current_time = get_current_time_in_pst()
                     print(f'{current_time} - USER -> {queue_name} new message:\n{beautified_json}')
                 except json.JSONDecodeError:
-                    # If JSON decoding fails, print the original message
                     current_time = get_current_time_in_pst()
-                    print(f'{current_time} - USER -> {queue_name} new message (not JSON):\n{message}')
+                    print(f'{current_time} - USER -> {queue_name} new message: {message}')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume(queue=queue_name, on_message_callback=callback)
@@ -87,10 +97,11 @@ def message_consumer(queue_name):
             time.sleep(5)
         except Exception as e:
             logging.error(f'Unexpected error: {e}, exiting consumer thread for {queue_name}')
-            break  # Exit the thread if an unexpected error occurs
+            break
         finally:
             if connection.is_open:
                 connection.close()
+
 
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
