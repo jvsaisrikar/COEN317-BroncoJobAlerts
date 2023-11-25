@@ -60,11 +60,12 @@ def message_consumer(queue_name):
             def callback(ch, method, properties, body):
                 message = body.decode()
                 current_time = get_current_time_in_pst()
-                print(f'{current_time} - INFO - Received message in {queue_name}: {message}')
+                print(f'{current_time} - Received message for user {queue_name}: {message}')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume(queue=queue_name, on_message_callback=callback)
-            logging.info(f'Starting message consumption for {queue_name}')
+            current_time = get_current_time_in_pst()
+            print(f'{current_time} - Consuming messages for: {queue_name}')
             channel.start_consuming()
         except pika.exceptions.AMQPConnectionError as e:
             logging.error(f'Connection was closed, retrying in 5 seconds: {e}')
@@ -145,7 +146,8 @@ def start_consumers_on_startup():
             consumer_thread = Thread(target=message_consumer, args=(queue_name,))
             consumer_threads[queue_name] = consumer_thread
             consumer_thread.start()
-            logging.info(f"Started consumer for {queue_name}")
+            current_time = get_current_time_in_pst()
+            print(f"{current_time} - Active User: {queue_name}")
 
 if __name__ == '__main__':
     start_consumers_on_startup()
