@@ -36,6 +36,8 @@ def get_current_time_in_pst():
 
 # Checking for '--verbose' argument; info logs will be displayed only if verbose is passed
 log_level = logging.INFO if '--verbose' in sys.argv else logging.ERROR
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 # Configure logging
 logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -65,12 +67,10 @@ def message_consumer(queue_name):
             def callback(ch, method, properties, body):
                 message = body.decode()
                 current_time = get_current_time_in_pst()
-                print(f'{current_time} - Received message for user {queue_name}: {message}')
+                print(f'{current_time} - USER {queue_name} new message : {message}')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume(queue=queue_name, on_message_callback=callback)
-            current_time = get_current_time_in_pst()
-            print(f'{current_time} - Consuming messages for user: {queue_name}')
             channel.start_consuming()
         except pika.exceptions.AMQPConnectionError as e:
             logging.error(f'Connection was closed, retrying in 5 seconds: {e}')
@@ -108,6 +108,8 @@ def subscribe():
             consumer_threads[username] = consumer_thread
             consumer_thread.start()
 
+        current_time = get_current_time_in_pst()
+        print(f'{current_time} - USER {queue_name} subscribed for topic: {topic}.')
         return jsonify({'status': 'subscribed', 'queue': queue_name, 'topic': topic}), 200
     except Exception as e:
         logging.error(f"Subscription error: {e}")
@@ -126,6 +128,8 @@ def unsubscribe():
 
     # Check if the topic is 'broadcast'
     if topic == 'broadcast':
+        current_time = get_current_time_in_pst()
+        print(f"{current_time} - USER: {username} unsubscribing from the broadcast topic is not allowed.")
         return jsonify({'error': 'Unsubscribing from the broadcast topic is not allowed'}), 400
 
     try:
@@ -139,6 +143,8 @@ def unsubscribe():
 
         channel.close()
         connection.close()
+        current_time = get_current_time_in_pst()
+        print(f'{current_time} - USER {username} unsubscribed from topic: {topic}.')
         return jsonify({'status': 'unsubscribed', 'queue': username, 'topic': topic,
                         'message': 'Topic unbound from queue successfully'}), 200
     except Exception as e:
@@ -152,7 +158,7 @@ def start_consumers_on_startup():
             consumer_threads[queue_name] = consumer_thread
             consumer_thread.start()
             current_time = get_current_time_in_pst()
-            print(f"{current_time} - Active User: {queue_name}")
+            print(f"{current_time} - USER: {queue_name} is active.")
 
 if __name__ == '__main__':
     start_consumers_on_startup()
