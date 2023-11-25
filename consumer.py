@@ -9,6 +9,7 @@ import logging
 import time
 import requests
 import pytz
+import json
 
 # Lock declaration
 subscribe_lock = Lock()
@@ -64,10 +65,19 @@ def message_consumer(queue_name):
             connection = pika.BlockingConnection(connection_parameters)
             channel = connection.channel()
             channel.basic_qos(prefetch_count=1)
+
             def callback(ch, method, properties, body):
-                message = body.decode()
-                current_time = get_current_time_in_pst()
-                print(f'{current_time} - USER {queue_name} new message : {message}')
+                message = body.decode('utf-8')
+                try:
+                    # Try to parse the message as JSON
+                    json_message = json.loads(message)
+                    beautified_json = json.dumps(json_message, indent=4)  # Beautify the JSON output
+                    current_time = get_current_time_in_pst()
+                    print(f'{current_time} - USER -> {queue_name} new message:\n{beautified_json}')
+                except json.JSONDecodeError:
+                    # If JSON decoding fails, print the original message
+                    current_time = get_current_time_in_pst()
+                    print(f'{current_time} - USER -> {queue_name} new message (not JSON):\n{message}')
                 ch.basic_ack(delivery_tag=method.delivery_tag)
 
             channel.basic_consume(queue=queue_name, on_message_callback=callback)
@@ -81,6 +91,7 @@ def message_consumer(queue_name):
         finally:
             if connection.is_open:
                 connection.close()
+
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
     try:
@@ -109,7 +120,7 @@ def subscribe():
             consumer_thread.start()
 
         current_time = get_current_time_in_pst()
-        print(f'{current_time} - USER {queue_name} subscribed for topic: {topic}.')
+        print(f'{current_time} - USER -> {queue_name} subscribed for topic: {topic}.')
         return jsonify({'status': 'subscribed', 'queue': queue_name, 'topic': topic}), 200
     except Exception as e:
         logging.error(f"Subscription error: {e}")
@@ -129,7 +140,7 @@ def unsubscribe():
     # Check if the topic is 'broadcast'
     if topic == 'broadcast':
         current_time = get_current_time_in_pst()
-        print(f"{current_time} - USER: {username} unsubscribing from the broadcast topic is not allowed.")
+        print(f"{current_time} - USER -> {username} unsubscribing from the broadcast topic is not allowed.")
         return jsonify({'error': 'Unsubscribing from the broadcast topic is not allowed'}), 400
 
     try:
@@ -144,7 +155,7 @@ def unsubscribe():
         channel.close()
         connection.close()
         current_time = get_current_time_in_pst()
-        print(f'{current_time} - USER {username} unsubscribed from topic: {topic}.')
+        print(f'{current_time} - USER -> {username} unsubscribed from topic: {topic}.')
         return jsonify({'status': 'unsubscribed', 'queue': username, 'topic': topic,
                         'message': 'Topic unbound from queue successfully'}), 200
     except Exception as e:
@@ -158,7 +169,7 @@ def start_consumers_on_startup():
             consumer_threads[queue_name] = consumer_thread
             consumer_thread.start()
             current_time = get_current_time_in_pst()
-            print(f"{current_time} - USER: {queue_name} is active.")
+            print(f"{current_time} - USER -> {queue_name} is active.")
 
 if __name__ == '__main__':
     start_consumers_on_startup()
