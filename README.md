@@ -72,10 +72,15 @@ POST: http://127.0.0.1:5000/publish
     "topic": "external"
 }
 
-# 2. Producer Internal: (will be from internal_events.txt file)
+# 2. Producer Internal:
 POST: http://127.0.0.1:5000/publish
 {
-    "topic": "internal"
+    "topic": "internal",
+    "events": [
+        "event1",
+        "event2",
+        "event3"
+    ]
 }
 
 # 3. Broadcast: (message will be sent to all users(queues))

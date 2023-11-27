@@ -25,7 +25,7 @@ def fetch_external_data():
     url = "https://boards-api.greenhouse.io/v1/boards/discord/jobs/"
     response = requests.get(url)
     if response.status_code == 200:
-        return response.json()  # Assuming the API returns a JSON response
+        return response.json()
     else:
         return {"error": "Failed to fetch data"}
 
@@ -36,18 +36,18 @@ def publish():
     data = request.json
     message = data.get("message", "")
     topic = data.get("topic", "")
+    events = data.get("events", [])
 
     # Create a connection to the RabbitMQ server
-    # connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     connection = pika.BlockingConnection(connection_parameters)
     channel = connection.channel()
 
-    # Declare an exchange
+    # Exchange Declaration
     channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type=ExchangeType.direct, durable=True)
 
     if topic == "internal":
-        internal_events = read_events_from_file('internal_events.txt')
-        for event in internal_events:
+        # make message persistent delivery_mode=2
+        for event in events:  # Process events from the request
             channel.basic_publish(
                 exchange=EXCHANGE_NAME,
                 routing_key=topic,
@@ -57,20 +57,21 @@ def publish():
     elif topic == "external":
         external_data = fetch_external_data()
         if isinstance(external_data, dict) and "error" not in external_data:
-            # Convert the dictionary to a JSON-formatted string
+            # Converting the dictionary of external events to a JSON-formatted string
             json_data = json.dumps(external_data).encode('utf-8')
             channel.basic_publish(
                 exchange=EXCHANGE_NAME,
                 routing_key=topic,
-                body=json_data,  # Now this is a bytes object
+                body=json_data,
                 properties=pika.BasicProperties(delivery_mode=2)
             )
     else:
+        # make message persistent delivery_mode=2
         channel.basic_publish(
             exchange=EXCHANGE_NAME,
             routing_key=topic,
             body=message,
-            properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
+            properties=pika.BasicProperties(delivery_mode=2)
         )
 
     connection.close()
