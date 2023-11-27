@@ -6,12 +6,6 @@ University life is buzzing with events such as career fairs, workshops, and trai
 
 To solve this, we're launching "Bronco-Career Alerts." It's a new system that lets students know about events that match their interests. This system uses the publisher-subscriber model, where students can pick what kind of event news they want. To sum it up, "Bronco-Career Alerts" makes sure students don't miss out on great career events. It's like a bridge linking students to the opportunities they care about.
 
-## Plan
-```
-Done: RabbitMQ is on Kubernetes.
-TODO: Producer is on Kubernetes.
-TODO: Consumers(Internal, External) will be on user's local machine.
-```
 ## Setup and Commands:
 ```
 # 1.Requirements
@@ -96,7 +90,7 @@ POST: http://127.0.0.1:5001/subscribe
     "topic": "internal or external"
 }
 
-# 5. Consumer Unsubscribe
+# 5. Consumer Unsubscribe:
 POST:  http://127.0.0.1:5001/unsubscribe
 {
     "username": "userBronco",
@@ -108,4 +102,10 @@ POST:  http://127.0.0.1:5001/unsubscribe
 # Go to path where locustfile.py is present
 Command to Run: locust
 Locust UI: http://localhost:8089/
+```
+
+## Run UnitTest Producer and Consumer
+```
+# 1. python3 -m unittest -v test_producer.py
+# 2. python3 -m unittest -v test_consumer.py
 ```
