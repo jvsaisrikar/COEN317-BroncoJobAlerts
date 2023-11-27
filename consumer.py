@@ -69,7 +69,7 @@ def message_consumer(queue_name):
             def callback(ch, method, properties, body):
                 message = body.decode('utf-8')
                 try:
-                    # Try to parse the message as JSON from greenhouse.io
+                    #Parsing messages as JSON string from greenhouse.io
                     json_message = json.loads(message)
                     jobs = json_message.get("jobs", [])
                     # filtering response
