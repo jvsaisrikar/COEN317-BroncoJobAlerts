@@ -102,5 +102,10 @@ POST:  http://127.0.0.1:5001/unsubscribe
     "username": "userBronco",
     "topic": "internal or external"
 }
-
+```
+## Load Testing (Using Locust)
+```
+# Go to path where locustfile.py is present
+Command to Run: locust
+Locust UI: http://localhost:8089/
 ```
