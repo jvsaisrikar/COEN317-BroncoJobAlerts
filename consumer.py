@@ -15,6 +15,8 @@ import json
 subscribe_lock = Lock()
 # broadcast topic
 BROADCAST_TOPIC = 'broadcast'
+# Allowed topics
+ALLOWED_TOPICS = ['internal', 'external']
 def fetch_queues():
     url = "http://localhost:15673/api/queues"
     response = requests.get(url, auth=HTTPBasicAuth('guest', 'guest'))
@@ -109,8 +111,15 @@ def subscribe():
         data = request.json
         username = data.get('username')
         topic = data.get('topic')
+        # Validate username and topic
         if not username or not topic:
+            logging.error(f"Subscribe error: Missing username or topic in request")
             return jsonify({'error': 'Missing username or topic'}), 400
+
+        # Check if the topic is allowed
+        if topic not in ALLOWED_TOPICS:
+            logging.error(f"Subscribe error: Attempt to subscribe to unauthorized topic '{topic}' by user '{username}'")
+            return jsonify({'error': 'Subscription to this topic is not allowed'}), 400
 
         connection = pika.BlockingConnection(connection_parameters)
         channel = connection.channel()
@@ -145,8 +154,15 @@ def unsubscribe():
     username = data.get('username')
     topic = data.get('topic')
 
+    # Validate username and topic
     if not username or not topic:
+        logging.error(f"Subscribe error: Missing username or topic in request")
         return jsonify({'error': 'Missing username or topic'}), 400
+
+    # Check if the topic is allowed
+    if topic not in ALLOWED_TOPICS:
+        logging.error(f"Subscribe error: Attempt to subscribe to unauthorized topic '{topic}' by user '{username}'")
+        return jsonify({'error': 'Subscription to this topic is not allowed'}), 400
 
     # Check if the topic is 'broadcast'
     if topic == 'broadcast':

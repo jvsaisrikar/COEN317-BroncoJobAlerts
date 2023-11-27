@@ -3,6 +3,7 @@ from pika.exchange_type import ExchangeType
 import requests
 import pika
 import json
+import logging
 
 app = Flask(__name__)
 
@@ -15,7 +16,8 @@ connection_parameters = pika.ConnectionParameters(
 )
 EXCHANGE_NAME = 'routing'
 BROADCAST_TOPIC = 'broadcast'
-
+# Allowed topics
+ALLOWED_TOPICS = ['internal', 'external']
 
 def read_events_from_file(filename):
     with open(filename, 'r') as file:
@@ -37,6 +39,12 @@ def publish():
     message = data.get("message", "")
     topic = data.get("topic", "")
     events = data.get("events", [])
+
+    # Check if the topic is neither 'internal' nor 'external'
+    if topic not in ALLOWED_TOPICS:
+        error_message = f"Invalid topic specified: {topic}"
+        logging.error(error_message)
+        return jsonify(status="error", message="Invalid topic specified"), 400
 
     # Create a connection to the RabbitMQ server
     connection = pika.BlockingConnection(connection_parameters)
@@ -65,14 +73,6 @@ def publish():
                 body=json_data,
                 properties=pika.BasicProperties(delivery_mode=2)
             )
-    else:
-        # make message persistent delivery_mode=2
-        channel.basic_publish(
-            exchange=EXCHANGE_NAME,
-            routing_key=topic,
-            body=message,
-            properties=pika.BasicProperties(delivery_mode=2)
-        )
 
     connection.close()
 
