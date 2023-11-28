@@ -19,10 +19,6 @@ BROADCAST_TOPIC = 'broadcast'
 # Allowed topics
 ALLOWED_TOPICS = ['internal', 'external']
 
-def read_events_from_file(filename):
-    with open(filename, 'r') as file:
-        return [line.strip() for line in file.readlines()]
-    
 def fetch_external_data():
     url = "https://boards-api.greenhouse.io/v1/boards/discord/jobs/"
     response = requests.get(url)
