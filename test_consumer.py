@@ -17,7 +17,7 @@ class TestConsumerApp(unittest.TestCase):
 
         response = self.app.post('/subscribe', json={
             'username': 'testuser',
-            'topic': 'testtopic'
+            'topic': 'internal'  # Allowed topic
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('subscribed', response.json['status'])
@@ -31,7 +31,7 @@ class TestConsumerApp(unittest.TestCase):
 
         response = self.app.post('/unsubscribe', json={
             'username': 'testuser',
-            'topic': 'testtopic'
+            'topic': 'internal'  # Allowed topic
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('unsubscribed', response.json['status'])
@@ -46,7 +46,6 @@ class TestConsumerApp(unittest.TestCase):
             unittest.mock.call('queue1'),
             unittest.mock.call('queue2')
         ], any_order=True)
-
 
 if __name__ == '__main__':
     unittest.main()
