@@ -71,7 +71,7 @@ def message_consumer(queue_name):
             def callback(ch, method, properties, body):
                 message = body.decode('utf-8')
                 try:
-                    #Parsing messages as JSON string from greenhouse.io
+                    # Parsing messages as JSON string from greenhouse.io
                     json_message = json.loads(message)
                     jobs = json_message.get("jobs", [])
                     # filtering response
@@ -118,7 +118,7 @@ def subscribe():
 
         # Check if the topic is allowed
         if topic not in ALLOWED_TOPICS:
-            logging.error(f"Subscribe error: Attempt to subscribe to unauthorized topic '{topic}' by user '{username}'")
+            logging.error(f"Subscribe error: Attempt to subscribe to invalid topic '{topic}' by user '{username}'")
             return jsonify({'error': 'Subscription to this topic is not allowed'}), 400
 
         connection = pika.BlockingConnection(connection_parameters)
@@ -161,8 +161,8 @@ def unsubscribe():
 
     # Check if the topic is allowed
     if topic not in ALLOWED_TOPICS:
-        logging.error(f"Subscribe error: Attempt to subscribe to unauthorized topic '{topic}' by user '{username}'")
-        return jsonify({'error': 'Subscription to this topic is not allowed'}), 400
+        logging.error(f"Subscribe error: Attempt to unsubscribe to invalid topic '{topic}' by user '{username}'")
+        return jsonify({'error': 'Invalid topic unsubscription is not allowed'}), 400
 
     # Check if the topic is 'broadcast'
     if topic == 'broadcast':
